@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { CATEGORY_LABEL, RATING_LABEL, RATING_STYLES, STATUS_STYLES } from '@/lib/data';
 import { Badge } from './ui/badge';
@@ -11,11 +11,14 @@ import { Button } from './ui/button';
 import Link from 'next/link';
 import FeedbackModal from './FeedbackModal';
 import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 const AppointmentCard = ({ booking, mode, isPast = false }) => {
 
     const [feedbackOpen, setFeedbackOpen] = useState(false);
     const { has } = useAuth();
+    const router = useRouter();
+
     const {
         startTime,
         endTime,
@@ -26,12 +29,25 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
         feedback,
     } = booking;
 
+    useEffect(() => {
+        const isCompleted = status === "COMPLETED";
+        const isMissingData = !recordingUrl || !feedback;
+
+        if (!isCompleted || !isMissingData) return;
+
+        const interval = setInterval(() => {
+            router.refresh();
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [status, recordingUrl, feedback, router]);
+
     const person = mode === "interviewer" ? booking.interviewee : booking.interviewer;
 
     const creditsLabel =
         mode === "interviewer"
             ? `+${creditsCharged} credits earned`
-            : `−${creditsCharged} credits`;
+            : `-${creditsCharged} credits`;
 
     const creditsStyle =
         mode === "interviewer"
@@ -39,6 +55,7 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
             : "border-amber-400/20 bg-amber-400/5 text-amber-400";
 
     const isUpcoming = status === "SCHEDULED";
+
     return (
         <>
             <FeedbackModal
@@ -50,7 +67,7 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                 }
             />
             <article className="group relative bg-[#0f0f11] border border-white/10 transition-all duration-300 hover:-translate-y-0.5 rounded-2xl bg-linear-to-t from-transparent via-transparent to-amber-300/10 p-7 flex flex-col gap-6 self-start">
-                <div className="flex items-start justify-between gap-4 ">
+                <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
                         <Avatar className="w-14 h-14 border border-white/10 rounded-2xl shrink-0">
                             <AvatarImage
@@ -65,13 +82,13 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
 
                         <div className="flex flex-col gap-1 min-w-0">
                             <p className="text-base font-medium text-stone-200 leading-tight truncate">
-                                {person?.name ?? "—"}
+                                {person?.name ?? "-"}
                             </p>
 
                             {person?.title && person?.company ? (
                                 <p className="text-xs text-stone-500 truncate">
                                     {person.title}
-                                    <span className="text-stone-700 mx-1.5">·</span>
+                                    <span className="text-stone-700 mx-1.5">.</span>
                                     {person.company}
                                 </p>
                             ) : (
@@ -103,8 +120,6 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                             {creditsLabel}
                         </Badge>
                     </div>
-
-
                 </div>
 
                 <Separator />
@@ -129,7 +144,7 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                         </div>
                         <p className="text-sm text-stone-300">
                             {formatTime(startTime)}
-                            <span className="text-stone-600 mx-1">–</span>
+                            <span className="text-stone-600 mx-1">-</span>
                             {formatTime(endTime)}
                         </p>
                     </div>
@@ -158,10 +173,17 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                     </div>
                 )}
 
+                {status === "COMPLETED" && (!recordingUrl || !feedback) && (
+                    <div className="flex items-center gap-2 text-xs text-stone-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse shrink-0" />
+                        Processing recording and feedback...
+                    </div>
+                )}
+
                 {(streamCallId || recordingUrl || feedback) && (
                     <div className="flex items-center gap-2 flex-wrap pt-1">
                         {!isPast && streamCallId && isUpcoming && (
-                            <Button variant='gold' size='sm' className="gap-2" asChild>
+                            <Button variant="gold" size="sm" className="gap-2" asChild>
                                 <Link href={`/call/${streamCallId}`}>
                                     <Video size={13} />
                                     Join Call
@@ -171,12 +193,8 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
 
                         {recordingUrl && has?.({ plan: "pro" }) && (
                             <Button variant="outline" size="sm" className="gap-2" asChild>
-                                <a
-                                    href={recordingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    📹 Recording
+                                <a href={recordingUrl} target="_blank" rel="noopener noreferrer">
+                                    Recording
                                 </a>
                             </Button>
                         )}
@@ -196,16 +214,15 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                                     variant="outline"
                                     className={RATING_STYLES[feedback.overallRating]}
                                 >
-                                    ✦ {RATING_LABEL[feedback.overallRating]} performance
+                                    {RATING_LABEL[feedback.overallRating]} performance
                                 </Badge>
                             </>
                         )}
-
                     </div>
                 )}
             </article>
         </>
-    )
-}
+    );
+};
 
 export default AppointmentCard;
