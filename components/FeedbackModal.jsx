@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
   TrendingUp,
@@ -20,10 +19,10 @@ import { StarsBackgroundDemo } from "./demo-components-backgrounds-stars";
 import { RATING_CONFIG } from "@/lib/data";
 
 const FeedbackModal = ({
-    open,
-    onOpenChange,
-    feedback,
-    intervieweeName,
+  open,
+  onOpenChange,
+  feedback,
+  intervieweeName,
 }) => {
   if (!feedback) return null;
 
@@ -57,7 +56,6 @@ const FeedbackModal = ({
               </p>
               <p className="font-serif text-3xl">{rating.label}</p>
             </div>
-
             <span className="text-4xl">{rating.emoji}</span>
           </div>
 
@@ -123,16 +121,15 @@ const FeedbackModal = ({
                   Strengths
                 </p>
               </div>
-
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {feedback.strengths?.map((s, i) => (
-                  <Badge
+                  <div
                     key={i}
-                    variant="outline"
-                    className="justify-start border-green-500/20 text-green-400 whitespace-normal"
+                    className="flex items-start gap-2"
                   >
-                    ✓ {s}
-                  </Badge>
+                    <span className="mt-0.5 shrink-0 text-green-400 text-xs">✓</span>
+                    <span className="text-sm text-green-400 font-light leading-snug">{s}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -144,16 +141,15 @@ const FeedbackModal = ({
                   To improve
                 </p>
               </div>
-
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {feedback.improvements?.map((imp, i) => (
-                  <Badge
+                  <div
                     key={i}
-                    variant="outline"
-                    className="justify-start border-red-500/20 text-red-400 whitespace-normal"
+                    className="flex items-start gap-2"
                   >
-                    ✓ {imp}
-                  </Badge>
+                    <span className="mt-0.5 shrink-0 text-red-400 text-xs">✗</span>
+                    <span className="text-sm text-red-400 font-light leading-snug">{imp}</span>
+                  </div>
                 ))}
               </div>
             </div>
