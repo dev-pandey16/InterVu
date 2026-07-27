@@ -120,7 +120,7 @@ const CallUI = ({
                                 <MessageSquare size={13} />
                                 Chat
                             </TabsTrigger>
-                            {true && (<TabsTrigger value="questions" className={"w-1/2"}>
+                            {isInterviewer && (<TabsTrigger value="questions" className={"w-1/2"}>
                                 <Sparkles size={13} />
                                 AI Questions
                             </TabsTrigger>)}

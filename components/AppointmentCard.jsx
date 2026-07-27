@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 const AppointmentCard = ({ booking, mode, isPast = false }) => {
 
     const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const [canJoin, setCanJoin] = useState(false);
     const { has } = useAuth();
     const router = useRouter();
 
@@ -29,6 +30,7 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
         feedback,
     } = booking;
 
+    // Poll every 10s if completed but still missing recording or feedback
     useEffect(() => {
         const isCompleted = status === "COMPLETED";
         const isMissingData = !recordingUrl || !feedback;
@@ -41,6 +43,24 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
 
         return () => clearInterval(interval);
     }, [status, recordingUrl, feedback, router]);
+
+    // Check join window: 5 min before start until end time
+    useEffect(() => {
+        if (status !== "SCHEDULED") return;
+
+        const checkJoinWindow = () => {
+            const now = new Date();
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const fiveMinBefore = new Date(start.getTime() - 5 * 60 * 1000);
+            setCanJoin(now >= fiveMinBefore && now <= end);
+        };
+
+        checkJoinWindow();
+        const interval = setInterval(checkJoinWindow, 30000); // recheck every 30s
+
+        return () => clearInterval(interval);
+    }, [status, startTime, endTime]);
 
     const person = mode === "interviewer" ? booking.interviewee : booking.interviewer;
 
@@ -55,6 +75,11 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
             : "border-amber-400/20 bg-amber-400/5 text-amber-400";
 
     const isUpcoming = status === "SCHEDULED";
+
+    const now = new Date();
+    const start = new Date(startTime);
+    const fiveMinBefore = new Date(start.getTime() - 5 * 60 * 1000);
+    const minutesUntilJoin = Math.ceil((fiveMinBefore - now) / 60000);
 
     return (
         <>
@@ -180,9 +205,17 @@ const AppointmentCard = ({ booking, mode, isPast = false }) => {
                     </div>
                 )}
 
+                {/* Countdown hint when session is upcoming but not yet joinable */}
+                {streamCallId && isUpcoming && !canJoin && minutesUntilJoin > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-stone-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-stone-700 shrink-0" />
+                        Call opens in {minutesUntilJoin} min
+                    </div>
+                )}
+
                 {(streamCallId || recordingUrl || feedback) && (
                     <div className="flex items-center gap-2 flex-wrap pt-1">
-                        {!isPast && streamCallId && isUpcoming && (
+                        {streamCallId && isUpcoming && canJoin && (
                             <Button variant="gold" size="sm" className="gap-2" asChild>
                                 <Link href={`/call/${streamCallId}`}>
                                     <Video size={13} />
